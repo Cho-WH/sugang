@@ -514,7 +514,12 @@ async function handlePdfDownload() {
     checkNewPage(normalFontSize / 2.5 + defaultLineHeight);
     addText(`학생 이름: ${studentNameForPdf}`, leftMargin, currentY, normalFontSize);
     currentY += defaultLineHeight * 1.5;
-
+    
+    checkNewPage(normalFontSize / 2.5 + defaultLineHeight * 3); 
+    const teacherSignX = pageWidth - rightMargin; 
+    addText("담임교사 확인: _______________", teacherSignX, currentY, normalFontSize, 'normal', { align: 'right' });
+    currentY += defaultLineHeight * 2; 
+    
     let overallTotalHoursForPdf = 0;
     const courseNameColX = leftMargin;
     const hoursColX = pageWidth - rightMargin; 
