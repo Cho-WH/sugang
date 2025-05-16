@@ -39,6 +39,39 @@ header {
     border-bottom: 1px solid var(--border-color);
 }
 
+/*과목 안내 링크 스타일 */
+.course-guide-link-container {
+    margin-top: 15px; /* 제목과의 간격 */
+    margin-bottom: 20px; /* 학생 이름 입력란과의 간격 */
+    text-align: center;
+}
+
+.course-guide-link {
+    display: inline-block; /* 버튼처럼 보이게 하기 위해 */
+    padding: 12px 25px;
+    background-color: var(--success-color); /* 눈에 띄는 색상 (예: 성공색) */
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    font-size: 1.1em; /* 글자 크기 키움 */
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.course-guide-link:hover {
+    background-color: #218838; /* 호버 시 약간 어둡게 */
+    transform: translateY(-2px); /* 살짝 떠오르는 효과 */
+    text-decoration: none;
+    color: white;
+}
+
+.course-guide-link:active {
+    transform: translateY(0); /* 클릭 시 원래 위치로 */
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+/* 과목 안내 링크 스타일 끝 */
+
 header h1 {
     color: var(--primary-color);
     margin-bottom: 10px;
