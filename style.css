@@ -72,6 +72,41 @@ header {
 }
 /* 과목 안내 링크 스타일 끝 */
 
+/* 중요 선택 조건 안내 문구 스타일 */
+.important-selection-notice {
+    background-color: #fff3cd; /* 연한 노란색 배경 (경고/알림 느낌) */
+    color: #856404; /* 어두운 노란색/갈색 텍스트 */
+    border: 1px solid #ffeeba; /* 연한 노란색 테두리 */
+    border-radius: 5px;
+    padding: 15px;
+    margin-top: 20px; /* 학생 이름 입력란과의 간격 */
+    margin-bottom: 25px; /* main 콘텐츠와의 간격 */
+    text-align: left; /* 내용은 왼쪽 정렬 */
+    font-size: 0.95em;
+}
+
+.important-selection-notice p {
+    margin-top: 0;
+    margin-bottom: 8px;
+    font-size: 1.05em; /* 제목 강조 */
+}
+
+.important-selection-notice ul {
+    list-style-type: disc; /* 기본 불릿 포인트 */
+    padding-left: 20px; /* 들여쓰기 */
+    margin-bottom: 0;
+}
+
+.important-selection-notice li {
+    margin-bottom: 6px; /* 항목 간 간격 */
+    line-height: 1.5;
+}
+
+.important-selection-notice li strong {
+    color: var(--error-color); /* 강조할 부분은 에러 색상 또는 다른 눈에 띄는 색상 사용 가능 */
+}
+/* 중요 선택 조건 안내 문구 스타일 끝 */
+
 header h1 {
     color: var(--primary-color);
     margin-bottom: 10px;
