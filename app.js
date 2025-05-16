@@ -1,19 +1,28 @@
 // app.js (ES Module)
 
 const COURSES_JSON_PATH = 'courses.json';
-const REQUIRED_TOTAL_HOURS_PER_SEMESTER = 29;
 const MANDATORY_GROUP_NAME = "학교지정";
-const LOCAL_STORAGE_KEY = 'courseSelectionsApp';
+const LOCAL_STORAGE_KEY = 'courseSelectionsApp_Y2Y3'; // LocalStorage 키 변경
 
-// DOM Elements
-let courseListContainer1, totalHoursDisplay1, validationMessagesContainer1;
-let courseListContainer2, totalHoursDisplay2, validationMessagesContainer2;
-let downloadPdfBtn, studentNameInput, overallValidationMessagesContainer;
+const ART_MUSIC_COURSE_IDS = ["c19", "c20", "c40", "c41", "c55", "c56", "c82", "c83"];
+const KES_MAX_COURSE_IDS = ["c34", "c57", "c58", "c59", "c60", "c84", "c85"];
+const EXACT_ART_MUSIC_SELECTION = 2; 
+const MAX_KES_SELECTION = 3;
+// 학년별, 학기별 필요 총 학점
+const REQUIRED_TOTAL_HOURS_MAP = {
+    "Y2S1": 29,
+    "Y2S2": 29,
+    "Y3S1": 29,
+    "Y3S2": 29
+};
+
+// DOM Elements (학년/학기별로 확장)
+let domElements = {}; // DOM 요소를 저장할 객체
 
 // State
 let allCourses = [];
-let coursesBySemester = { 1: [], 2: [] };
-let groupedCoursesBySemester = { 1: {}, 2: {} };
+let coursesByYearSemester = { 2: { 1: [], 2: [] }, 3: { 1: [], 2: [] } };
+let groupedCoursesByYearSemester = { 2: { 1: {}, 2: {} }, 3: { 1: {}, 2: {} } };
 let selectedCourseIds = new Set();
 let studentName = '';
 
@@ -21,51 +30,76 @@ let studentName = '';
  * Initializes the application.
  */
 async function init() {
-    // Cache DOM elements
-    courseListContainer1 = document.getElementById('course-list-container-1');
-    totalHoursDisplay1 = document.getElementById('total-hours-display-1');
-    validationMessagesContainer1 = document.getElementById('validation-messages-container-1');
-    
-    courseListContainer2 = document.getElementById('course-list-container-2');
-    totalHoursDisplay2 = document.getElementById('total-hours-display-2');
-    validationMessagesContainer2 = document.getElementById('validation-messages-container-2');
-
-    downloadPdfBtn = document.getElementById('download-pdf-btn');
-    studentNameInput = document.getElementById('studentName');
-    overallValidationMessagesContainer = document.getElementById('overall-validation-messages-container');
-
+    cacheDomElements(); // DOM 요소 캐싱 함수 호출
     loadStateFromLocalStorage();
-    studentNameInput.value = studentName;
+    domElements.studentNameInput.value = studentName;
 
     try {
         allCourses = await fetchCourses();
         
+        // 학년/학기별로 과목 분배
         allCourses.forEach(course => {
-            if (coursesBySemester[course.semester]) {
-                coursesBySemester[course.semester].push(course);
+            if (!coursesByYearSemester[course.year]) {
+                coursesByYearSemester[course.year] = { 1: [], 2: [] };
+            }
+            if (coursesByYearSemester[course.year] && coursesByYearSemester[course.year][course.semester]) {
+                coursesByYearSemester[course.year][course.semester].push(course);
+            } else {
+                console.warn(`Course ${course.id} has invalid year/semester: Y${course.year}S${course.semester}`);
             }
         });
-
-        processAndGroupCourses(1);
-        processAndGroupCourses(2);
         
-        renderCourseGroups(1);
-        renderCourseGroups(2);
+        // 각 학년/학기별로 처리 및 렌더링
+        for (const year of [2, 3]) {
+            for (const semester of [1, 2]) {
+                processAndGroupCourses(year, semester);
+                renderCourseGroups(year, semester);
+                // HTML에 required hours 업데이트
+                const reqHoursSpan = document.getElementById(`required-hours-y${year}s${semester}`);
+                if (reqHoursSpan) {
+                    reqHoursSpan.textContent = REQUIRED_TOTAL_HOURS_MAP[`Y${year}S${semester}`];
+                }
+            }
+        }
         
         setupEventListeners();
-        updateValidationAndUI();
+        updateValidationAndUI(); // 초기 UI 업데이트
     } catch (error) {
         console.error("Error initializing app:", error);
-        if (courseListContainer1) courseListContainer1.innerHTML = '<p style="color: red;">1학기 과목 정보를 불러오는데 실패했습니다. 파일을 확인해주세요.</p>';
-        if (courseListContainer2) courseListContainer2.innerHTML = '<p style="color: red;">2학기 과목 정보를 불러오는데 실패했습니다. 파일을 확인해주세요.</p>';
+        // 각 학기 컨테이너에 오류 메시지 표시 (필요시 확장)
+        const years = [2,3];
+        years.forEach(year => {
+            [1,2].forEach(semester => {
+                const containerId = `course-list-container-y${year}s${semester}`;
+                const container = document.getElementById(containerId);
+                if (container) {
+                    container.innerHTML = `<p style="color: red;">${year}학년 ${semester}학기 과목 정보를 불러오는데 실패했습니다.</p>`;
+                }
+            });
+        });
     }
 }
 
 /**
- * Fetches course data from courses.json.
- * @returns {Promise<Array>} A promise that resolves to an array of course objects.
+ * Caches all relevant DOM elements.
  */
+function cacheDomElements() {
+    domElements.studentNameInput = document.getElementById('studentName');
+    domElements.downloadPdfBtn = document.getElementById('download-pdf-btn');
+    domElements.overallValidationMessagesContainer = document.getElementById('overall-validation-messages-container');
+
+    for (const year of [2, 3]) {
+        for (const semester of [1, 2]) {
+            const keyPrefix = `y${year}s${semester}`; // e.g., y2s1
+            domElements[`courseListContainer_${keyPrefix}`] = document.getElementById(`course-list-container-${keyPrefix}`);
+            domElements[`totalHoursDisplay_${keyPrefix}`] = document.getElementById(`total-hours-display-${keyPrefix}`);
+            domElements[`validationMessagesContainer_${keyPrefix}`] = document.getElementById(`validation-messages-container-${keyPrefix}`);
+        }
+    }
+}
+
 async function fetchCourses() {
+    // ... (기존과 동일)
     const response = await fetch(COURSES_JSON_PATH);
     if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status} while fetching ${COURSES_JSON_PATH}`);
@@ -74,30 +108,28 @@ async function fetchCourses() {
 }
 
 /**
- * Processes courses for a specific semester to group them and identify mandatory selections.
+ * Processes courses for a specific year and semester.
+ * @param {number} year - The year (2 or 3).
  * @param {number} semester - The semester (1 or 2).
  */
-function processAndGroupCourses(semester) {
-    const semesterCourses = coursesBySemester[semester];
-    groupedCoursesBySemester[semester] = {}; // Reset for the semester
+function processAndGroupCourses(year, semester) {
+    const yearSemesterCourses = coursesByYearSemester[year][semester];
+    if (!groupedCoursesByYearSemester[year]) groupedCoursesByYearSemester[year] = {};
+    groupedCoursesByYearSemester[year][semester] = {}; // Reset for the year/semester
     
-    // Determine if we are restoring selections from localStorage
-    // This check is simplified: if localStorage has *any* selections, assume it's a restoration.
-    // A more robust check might involve comparing localStorage content with initial mandatory courses.
     const isRestoringSelection = localStorage.getItem(LOCAL_STORAGE_KEY) !== null && JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY)).selectedCourseIds.length > 0;
 
-    semesterCourses.forEach(course => {
-        if (!groupedCoursesBySemester[semester][course.group]) {
+    yearSemesterCourses.forEach(course => {
+        if (!groupedCoursesByYearSemester[year][semester][course.group]) {
             const isMandatoryGroup = course.group === MANDATORY_GROUP_NAME;
-            groupedCoursesBySemester[semester][course.group] = {
+            groupedCoursesByYearSemester[year][semester][course.group] = {
                 courses: [],
-                quota: isMandatoryGroup ? 0 : course.groupQuota, // Mandatory groups have no selectable quota from UI perspective
+                quota: isMandatoryGroup ? 0 : course.groupQuota,
                 isMandatory: isMandatoryGroup,
             };
         }
-        groupedCoursesBySemester[semester][course.group].courses.push(course);
+        groupedCoursesByYearSemester[year][semester][course.group].courses.push(course);
 
-        // If not restoring from localStorage, pre-select mandatory courses for this semester
         if (course.mandatory && !isRestoringSelection) {
             selectedCourseIds.add(course.id);
         }
@@ -105,26 +137,31 @@ function processAndGroupCourses(semester) {
 }
 
 /**
- * Renders course groups for a specific semester.
+ * Renders course groups for a specific year and semester.
+ * @param {number} year - The year (2 or 3).
  * @param {number} semester - The semester (1 or 2).
  */
-function renderCourseGroups(semester) {
-    const container = semester === 1 ? courseListContainer1 : courseListContainer2;
+function renderCourseGroups(year, semester) {
+    const keyPrefix = `y${year}s${semester}`;
+    const container = domElements[`courseListContainer_${keyPrefix}`];
     if (!container) {
-        console.error(`Container for semester ${semester} not found.`);
+        console.error(`Container for year ${year} semester ${semester} not found.`);
         return;
     }
     container.innerHTML = ''; 
 
-    const currentGroupedCourses = groupedCoursesBySemester[semester];
+    const currentGroupedCourses = groupedCoursesByYearSemester[year][semester];
     
+    // ... (정렬 로직은 기존과 유사하게, currentGroupedCourses를 사용)
     const sortedGroupNames = Object.keys(currentGroupedCourses).sort((a, b) => {
+        // ... (기존 정렬 로직과 동일)
         const groupAData = currentGroupedCourses[a];
         const groupBData = currentGroupedCourses[b];
         if (groupAData.isMandatory && !groupBData.isMandatory) return -1;
         if (!groupAData.isMandatory && groupBData.isMandatory) return 1;
         return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
     });
+
 
     sortedGroupNames.forEach(groupName => {
         const groupData = currentGroupedCourses[groupName];
@@ -142,7 +179,8 @@ function renderCourseGroups(semester) {
         const sortedCoursesInGroup = [...groupData.courses].sort((a, b) => a.name.localeCompare(b.name));
 
         sortedCoursesInGroup.forEach(course => {
-            const courseItem = createCourseItemElement(course, groupName, semester);
+            // createCourseItemElement에 year, semester 전달
+            const courseItem = createCourseItemElement(course, groupName, year, semester);
             fieldset.appendChild(courseItem);
         });
         container.appendChild(fieldset);
@@ -153,20 +191,22 @@ function renderCourseGroups(semester) {
  * Creates a DOM element for a single course.
  * @param {Object} course - The course object.
  * @param {string} groupName - The name of the group the course belongs to.
+ * @param {number} year - The year the course belongs to.
  * @param {number} semester - The semester the course belongs to.
  * @returns {HTMLElement} The div element representing the course item.
  */
-function createCourseItemElement(course, groupName, semester) {
+function createCourseItemElement(course, groupName, year, semester) { // year, semester 추가
     const div = document.createElement('div');
     div.classList.add('course-item');
     const label = document.createElement('label');
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
-    checkbox.id = `course-${course.id}`;
+    checkbox.id = `course-${course.id}`; // ID는 고유해야 하므로 course.id 사용
     checkbox.value = course.id;
     checkbox.dataset.hours = course.hours;
     checkbox.dataset.group = groupName;
-    checkbox.dataset.semester = semester; 
+    checkbox.dataset.year = year; // 데이터셋에 year 추가
+    checkbox.dataset.semester = semester; // 데이터셋에 semester 추가
 
     if (selectedCourseIds.has(course.id)) {
         checkbox.checked = true;
@@ -183,19 +223,13 @@ function createCourseItemElement(course, groupName, semester) {
     return div;
 }
 
-/**
- * Sets up global event listeners.
- */
 function setupEventListeners() {
-    downloadPdfBtn.addEventListener('click', handlePdfDownload);
-    studentNameInput.addEventListener('input', handleStudentNameChange);
+    domElements.downloadPdfBtn.addEventListener('click', handlePdfDownload);
+    domElements.studentNameInput.addEventListener('input', handleStudentNameChange);
 }
 
-/**
- * Handles changes in course selection checkboxes.
- * @param {Event} event - The change event object.
- */
 function handleCourseSelectionChange(event) {
+    // ... (기존과 동일, selectedCourseIds 업데이트 후 updateValidationAndUI 호출)
     const checkbox = event.target;
     const courseId = checkbox.value;
     
@@ -208,229 +242,255 @@ function handleCourseSelectionChange(event) {
     saveStateToLocalStorage();
 }
 
-/**
- * Handles changes in the student name input field.
- */
 function handleStudentNameChange(event) {
+    // ... (기존과 동일)
     studentName = event.target.value.trim();
-    // PDF button state might depend on name if it were mandatory, but for now, just save
     saveStateToLocalStorage();
-    // No need to call updateValidationAndUI() unless name affects validation rules.
-    // However, if PDF filename changes, it's good practice. Let's keep it for consistency.
     updateValidationAndUI(); 
 }
 
 /**
- * Updates validation status and refreshes the UI for both semesters.
+ * Updates validation status and refreshes the UI for all year/semesters.
  */
 function updateValidationAndUI() {
-    const validationResult1 = validateSelectionsForSemester(1);
-    const validationResult2 = validateSelectionsForSemester(2);
+    const validationResults = {};
+    let allSemestersValid = true;
 
-    // Update UI for Semester 1
-    if (totalHoursDisplay1) totalHoursDisplay1.textContent = validationResult1.currentTotalHours;
-    if (validationMessagesContainer1) {
-        validationMessagesContainer1.innerHTML = '';
-        validationResult1.messages.forEach(msg => {
-            const p = document.createElement('p');
-            p.textContent = msg.text;
-            p.classList.add(msg.type === 'error' ? 'validation-error' : 'validation-success');
-            validationMessagesContainer1.appendChild(p);
-        });
-    }
+    for (const year of [2, 3]) {
+        for (const semester of [1, 2]) {
+            const result = validateSelectionsForYearSemester(year, semester);
+            validationResults[`Y${year}S${semester}`] = result;
+            if (!result.isValid) {
+                allSemestersValid = false;
+            }
 
-    // Update UI for Semester 2
-    if (totalHoursDisplay2) totalHoursDisplay2.textContent = validationResult2.currentTotalHours;
-    if (validationMessagesContainer2) {
-        validationMessagesContainer2.innerHTML = '';
-        validationResult2.messages.forEach(msg => {
-            const p = document.createElement('p');
-            p.textContent = msg.text;
-            p.classList.add(msg.type === 'error' ? 'validation-error' : 'validation-success');
-            validationMessagesContainer2.appendChild(p);
-        });
+            // Update UI for Year/Semester
+            const keyPrefix = `y${year}s${semester}`;
+            const totalHoursDisplay = domElements[`totalHoursDisplay_${keyPrefix}`];
+            const validationMessagesContainer = domElements[`validationMessagesContainer_${keyPrefix}`];
+
+            if (totalHoursDisplay) totalHoursDisplay.textContent = result.currentTotalHours;
+            if (validationMessagesContainer) {
+                validationMessagesContainer.innerHTML = '';
+                result.messages.forEach(msg => {
+                    const p = document.createElement('p');
+                    p.textContent = msg.text;
+                    p.classList.add(msg.type === 'error' ? 'validation-error' : 'validation-success');
+                    validationMessagesContainer.appendChild(p);
+                });
+            }
+        }
     }
     
-    // --- 중복 과목 검사 로직 ---
+    // --- 중복 과목 검사 로직 (기존 로직 유지 - 학년과 무관하게 동일 과목명이 다른 학기(1 vs 2)에 선택되면 중복) ---
     let duplicateCourseError = null;
     const selectedCoursesDetails = Array.from(selectedCourseIds)
         .map(id => allCourses.find(course => course.id === id))
-        .filter(course => course); // null 값 제거 (혹시 모를 경우 대비)
+        .filter(course => course); 
 
     const courseNameSemesterMap = new Map();
     for (const course of selectedCoursesDetails) {
         if (!courseNameSemesterMap.has(course.name)) {
             courseNameSemesterMap.set(course.name, new Set());
         }
-        courseNameSemesterMap.get(course.name).add(course.semester);
+        // course.semester 는 1 또는 2. 학년(year) 정보는 여기선 사용 안 함.
+        // 즉, '일본어 (2학년 1학기)'와 '일본어 (2학년 2학기)'는 중복.
+        // '일본어 (2학년 1학기)'와 '일본어 (3학년 1학기)'는 course.semester가 둘 다 1이므로 중복 아님.
+        // '일본어 (2학년 1학기)'와 '일본어 (3학년 2학기)'는 course.semester가 1과 2이므로 중복.
+        courseNameSemesterMap.get(course.name).add(course.semester); 
     }
 
-    for (const [courseName, semesters] of courseNameSemesterMap) {
-        if (semesters.size > 1) { // 같은 과목명으로 여러 학기에 선택됨
-            duplicateCourseError = `과목 "${courseName}"은(는) 여러 학기에 중복하여 선택할 수 없습니다.`;
-            break; // 첫 번째 중복 발견 시 중단
+    for (const [courseName, semestersSet] of courseNameSemesterMap) {
+        if (semestersSet.size > 1) { 
+            const selectedOfferings = selectedCoursesDetails
+                .filter(c => c.name === courseName)
+                .map(c => `${c.year}학년 ${c.semester}학기`)
+                .join(', ');
+            duplicateCourseError = `과목 "${courseName}"은(는) 여러 학기에 중복하여 선택할 수 없습니다. (선택된 시점: ${selectedOfferings})`;
+            break; 
         }
     }
 
-    // Overall validation and PDF button
-    const overallIsValid = validationResult1.isValid && validationResult2.isValid && !duplicateCourseError; // 중복 에러 없을 때만 유효
-    if (downloadPdfBtn) downloadPdfBtn.disabled = !overallIsValid;
+    // --- 추가 전체 검증 조건 ---
+    let artMusicSelectionValid = true;
+    let artMusicMessage = "";
+    const selectedArtMusicCoursesCount = Array.from(selectedCourseIds).filter(id => ART_MUSIC_COURSE_IDS.includes(id)).length; // 변수명 변경 (selectedArtMusicCourses -> selectedArtMusicCoursesCount)
     
-    if (overallValidationMessagesContainer) {
-        overallValidationMessagesContainer.innerHTML = ''; // Clear previous overall messages
+    // 조건 변경: selectedArtMusicCoursesCount가 EXACT_ART_MUSIC_SELECTION과 다를 경우 오류
+    if (selectedArtMusicCoursesCount !== EXACT_ART_MUSIC_SELECTION) {
+        artMusicSelectionValid = false;
+        artMusicMessage = `미술/음악 관련 과목(${ART_MUSIC_COURSE_IDS.map(id => allCourses.find(c=>c.id===id)?.name || id).join(', ')}) 중 정확히 ${EXACT_ART_MUSIC_SELECTION}개를 선택해야 합니다. (현재 ${selectedArtMusicCoursesCount}개 선택)`;
+    }
 
-        if (duplicateCourseError) { // 중복 에러가 있으면 최우선으로 표시
+    let kesSelectionValid = true;
+    // ... (kesSelectionValid 로직은 동일) ...
+    let kesMessage = "";
+    const selectedKESCourses = Array.from(selectedCourseIds).filter(id => KES_MAX_COURSE_IDS.includes(id)).length;
+    if (selectedKESCourses > MAX_KES_SELECTION) {
+        kesSelectionValid = false;
+        kesMessage = `지정된 국영수 관련 과목(${KES_MAX_COURSE_IDS.map(id => allCourses.find(c=>c.id===id)?.name || id).join(', ')}) 중 ${MAX_KES_SELECTION}개 이하로 선택해야 합니다. (현재 ${selectedKESCourses}개 선택)`;
+    }
+
+    // Overall validation and PDF button
+    const overallIsValid = allSemestersValid && !duplicateCourseError;
+    if (domElements.downloadPdfBtn) domElements.downloadPdfBtn.disabled = !overallIsValid;
+    
+    if (domElements.overallValidationMessagesContainer) {
+        domElements.overallValidationMessagesContainer.innerHTML = ''; 
+
+        if (duplicateCourseError) {
             const p = document.createElement('p');
             p.textContent = duplicateCourseError;
             p.classList.add('validation-error');
-            overallValidationMessagesContainer.appendChild(p);
+            domElements.overallValidationMessagesContainer.appendChild(p);
+        }
+
+        if (!artMusicSelectionValid) {
+            const p = document.createElement('p');
+            p.textContent = artMusicMessage;
+            p.classList.add('validation-error');
+            domElements.overallValidationMessagesContainer.appendChild(p);
+        } else if (artMusicMessage === "" && selectedArtMusicCoursesCount === EXACT_ART_MUSIC_SELECTION) { // 성공 조건 명확화
+            const p = document.createElement('p');
+            p.textContent = `미술/음악 관련 과목 선택 조건 충족! (정확히 ${EXACT_ART_MUSIC_SELECTION}개 선택됨)`;
+            p.classList.add('validation-success');
+            domElements.overallValidationMessagesContainer.appendChild(p);
+        }
+
+        if (!kesSelectionValid) {
+            // ... (KES 에러 메시지 표시는 동일) ...
+            const p = document.createElement('p');
+            p.textContent = kesMessage;
+            p.classList.add('validation-error');
+            domElements.overallValidationMessagesContainer.appendChild(p);
+        } else if (kesMessage === "" && selectedCourseIds.size > 0) { 
+            // ... (KES 성공 메시지 표시는 동일, selectedCourseIds.size > 0 조건은 선택사항으로 유지) ...
+             const p = document.createElement('p');
+            p.textContent = `지정 국영수 관련 과목 선택 조건 충족! (최대 ${MAX_KES_SELECTION}개, 현재 ${selectedKESCourses}개)`;
+            p.classList.add('validation-success');
+            domElements.overallValidationMessagesContainer.appendChild(p);
         }
 
         if (overallIsValid) {
             const p = document.createElement('p');
-            p.textContent = "모든 학기의 수강신청 조건이 충족되었습니다. PDF 다운로드가 가능합니다.";
+            p.textContent = "모든 학년/학기의 수강신청 조건이 충족되었습니다. PDF 다운로드가 가능합니다.";
             p.classList.add('validation-success');
-            overallValidationMessagesContainer.appendChild(p);
-        } else if (!duplicateCourseError) { // 중복 에러가 없고, 다른 이유로 유효하지 않을 때
+            domElements.overallValidationMessagesContainer.appendChild(p);
+        } else if (!duplicateCourseError) { 
             const p = document.createElement('p');
             let specificIssues = [];
-            if (!validationResult1.isValid) specificIssues.push("1학기");
-            if (!validationResult2.isValid) specificIssues.push("2학기");
+            if (!validationResults.Y2S1.isValid) specificIssues.push("2학년 1학기");
+            if (!validationResults.Y2S2.isValid) specificIssues.push("2학년 2학기");
+            if (!validationResults.Y3S1.isValid) specificIssues.push("3학년 1학기");
+            if (!validationResults.Y3S2.isValid) specificIssues.push("3학년 2학기");
             
-            p.textContent = `${specificIssues.join(', ')} 수강신청 조건이 충족되지 않았습니다. 각 학기별 선택 내용을 확인해주세요.`;
+            p.textContent = `${specificIssues.join(', ')} 수강신청 조건이 충족되지 않았습니다. 각 학년/학기별 선택 내용을 확인해주세요.`;
             p.classList.add('validation-error');
-            overallValidationMessagesContainer.appendChild(p);
+            domElements.overallValidationMessagesContainer.appendChild(p);
         }
-        // 만약 duplicateCourseError가 있고, 다른 학기별 오류도 있다면,
-        // 중복 에러 메시지 외에 학기별 오류 메시지는 각 학기 섹션에 이미 표시되므로
-        // overallValidationMessagesContainer에는 중복 에러만 표시하거나,
-        // "그리고 일부 학기 조건도 미충족..." 같은 메시지를 추가할 수 있습니다.
-        // 현재는 중복 에러가 있으면 그것만 overall에 표시하고, PDF 버튼은 비활성화됩니다.
     }
 }
 
 /**
- * Validates current selections for a specific semester.
+ * Validates current selections for a specific year and semester.
+ * @param {number} year - The year (2 or 3).
  * @param {number} semester - The semester (1 or 2).
  * @returns {Object} An object containing { isValid: Boolean, messages: Array, currentTotalHours: Number }.
  */
-function validateSelectionsForSemester(semester) {
+function validateSelectionsForYearSemester(year, semester) {
     const messages = [];
-    let semesterIsValid = true;
-    let currentTotalHoursInSemester = 0;
+    let yearSemesterIsValid = true;
+    let currentTotalHoursInYearSemester = 0;
+    const requiredHours = REQUIRED_TOTAL_HOURS_MAP[`Y${year}S${semester}`];
 
-    const semesterCourses = coursesBySemester[semester];
-    if (!semesterCourses || semesterCourses.length === 0) { // Handle case where semester data might not be loaded
-        return { isValid: true, messages: [{text: `${semester}학기 과목 정보가 없습니다.`, type:'info'}], currentTotalHours: 0 };
+    const yearSemesterCourses = coursesByYearSemester[year]?.[semester];
+    if (!yearSemesterCourses || yearSemesterCourses.length === 0) {
+        return { isValid: true, messages: [{text: `${year}학년 ${semester}학기 과목 정보가 없습니다.`, type:'info'}], currentTotalHours: 0 };
     }
-    const currentGroupedCourses = groupedCoursesBySemester[semester];
+    const currentGroupedCourses = groupedCoursesByYearSemester[year]?.[semester];
 
     Object.entries(currentGroupedCourses).forEach(([groupName, groupData]) => {
         if (!groupData.isMandatory) {
             const selectedInGroup = groupData.courses.filter(c => selectedCourseIds.has(c.id)).length;
             if (selectedInGroup !== groupData.quota) {
                 messages.push({ text: `"${groupName}" 그룹에서 ${groupData.quota}개의 과목을 선택해야 합니다. (현재 ${selectedInGroup}개 선택)`, type: 'error' });
-                semesterIsValid = false;
+                yearSemesterIsValid = false;
             } else {
                  messages.push({ text: `"${groupName}" 그룹 선택 완료! (${selectedInGroup}/${groupData.quota}개)`, type: 'success' });
             }
         }
     });
 
-    semesterCourses.forEach(course => {
+    yearSemesterCourses.forEach(course => {
         if (selectedCourseIds.has(course.id)) {
-            currentTotalHoursInSemester += course.hours;
+            currentTotalHoursInYearSemester += course.hours;
         }
     });
 
-    if (currentTotalHoursInSemester !== REQUIRED_TOTAL_HOURS_PER_SEMESTER) {
-        messages.push({ text: `${semester}학기 총 학점은 정확히 ${REQUIRED_TOTAL_HOURS_PER_SEMESTER}학점이어야 합니다. (현재 ${currentTotalHoursInSemester}학점)`, type: 'error' });
-        semesterIsValid = false;
+    if (currentTotalHoursInYearSemester !== requiredHours) {
+        messages.push({ text: `${year}학년 ${semester}학기 총 학점은 정확히 ${requiredHours}학점이어야 합니다. (현재 ${currentTotalHoursInYearSemester}학점)`, type: 'error' });
+        yearSemesterIsValid = false;
     } else {
-        messages.push({ text: `${semester}학기 총 학점 조건 충족! (${currentTotalHoursInSemester}/${REQUIRED_TOTAL_HOURS_PER_SEMESTER}학점)`, type: 'success' });
+        messages.push({ text: `${year}학년 ${semester}학기 총 학점 조건 충족! (${currentTotalHoursInYearSemester}/${requiredHours}학점)`, type: 'success' });
     }
     
-    if (semesterIsValid) {
-        messages.unshift({ text: `${semester}학기 선택 조건이 모두 충족되었습니다.`, type: 'success' });
+    const yearSemesterLabel = `${year}학년 ${semester}학기`;
+    if (yearSemesterIsValid) {
+        messages.unshift({ text: `${yearSemesterLabel} 선택 조건이 모두 충족되었습니다.`, type: 'success' });
     } else {
-        messages.unshift({ text: `${semester}학기 일부 조건이 충족되지 않았습니다.`, type: 'error' });
+        messages.unshift({ text: `${yearSemesterLabel} 일부 조건이 충족되지 않았습니다.`, type: 'error' });
     }
 
-    return { isValid: semesterIsValid, messages, currentTotalHours: currentTotalHoursInSemester };
+    return { isValid: yearSemesterIsValid, messages, currentTotalHours: currentTotalHoursInYearSemester };
 }
 
 /**
  * Handles the PDF download button click.
- * Generates and downloads a PDF of selected courses, grouped by semester, using text and tables.
- * Loads a local lightweight Korean font (NanumSquare_acR.ttf).
+ * Generates and downloads a PDF of selected courses, grouped by year and semester.
  */
 async function handlePdfDownload() {
-    if (downloadPdfBtn.disabled) return;
+    if (domElements.downloadPdfBtn.disabled) return;
 
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
 
-    // --- 폰트 파일 로드 및 등록 ---
+    // --- 폰트 로드 및 등록 (기존과 동일) ---
     try {
-        // 폰트 파일 경로 (app.js 기준 상대 경로)
-        // 만약 fonts 폴더 안에 있다면 './fonts/NanumSquare_acR.ttf' 와 같이 수정
         const fontUrl = './NanumSquare_acR.ttf';
-        
         const response = await fetch(fontUrl);
-        if (!response.ok) {
-            throw new Error(`폰트 파일 로드 실패: ${response.statusText} (경로: ${fontUrl})`);
-        }
-        const fontBuffer = await response.arrayBuffer(); // ArrayBuffer로 가져옴
-        
-        // ArrayBuffer를 Base64 문자열로 변환
+        if (!response.ok) throw new Error(`폰트 파일 로드 실패: ${response.statusText}`);
+        const fontBuffer = await response.arrayBuffer();
         let binary = '';
         const bytes = new Uint8Array(fontBuffer);
-        const len = bytes.byteLength;
-        for (let i = 0; i < len; i++) {
-            binary += String.fromCharCode(bytes[i]);
-        }
+        for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
         const fontBase64 = btoa(binary);
-
-        // jsPDF에 폰트 등록
-        // 1. VFS(Virtual File System)에 폰트 파일 추가
         pdf.addFileToVFS('NanumSquare_acR.ttf', fontBase64);
-        // 2. 폰트 추가 (VFS에 있는 파일명, 폰트 이름, 스타일)
         pdf.addFont('NanumSquare_acR.ttf', 'NanumSquareACR', 'normal');
-        // 필요하다면 bold 스타일도 동일 폰트 파일로 등록하거나, 별도의 bold 폰트 파일 사용
-        // pdf.addFont('NanumSquare_acB.ttf', 'NanumSquareACR', 'bold'); // 예시 (볼드 폰트 파일이 있다면)
-
-        // 사용할 폰트 설정
-        pdf.setFont('NanumSquareACR', 'normal'); // 폰트 이름과 스타일 지정
+        pdf.setFont('NanumSquareACR', 'normal');
         console.log("NanumSquare_acR.ttf font registered successfully.");
-
     } catch (error) {
         console.error("폰트 로드 및 등록 오류:", error);
-        alert("PDF용 한글 글꼴 파일을 불러오는 데 실패했습니다. PDF에 글자가 제대로 표시되지 않을 수 있습니다. 'NanumSquare_acR.ttf' 파일이 올바른 위치에 있는지 확인해주세요. 기본 글꼴로 생성합니다.");
-        pdf.setFont('Helvetica'); // 폴백 폰트 (한글 깨짐)
+        alert("PDF용 한글 글꼴 파일을 불러오는 데 실패했습니다. 기본 글꼴로 생성합니다.");
+        pdf.setFont('Helvetica');
     }
 
-    // --- PDF 레이아웃 변수 (이전 텍스트 기반 PDF 생성 코드와 유사하게 설정) ---
-    let currentY = 20; // 현재 Y 위치 (상단 마진 포함)
+    // --- PDF 레이아웃 변수 (기존과 동일) ---
+    let currentY = 20;
     const pageHeight = pdf.internal.pageSize.getHeight();
     const pageWidth = pdf.internal.pageSize.getWidth();
     const leftMargin = 15;
     const rightMargin = 15;
     const topMargin = 20; 
     const bottomMargin = 20;
-    const defaultLineHeight = 7; // 기본 줄 간격 (mm) - 폰트 크기에 따라 조절
-
-    const titleFontSize = 16; // 폰트에 맞춰 크기 조절 가능
+    const defaultLineHeight = 7;
+    const titleFontSize = 16;
     const headerFontSize = 11;
     const normalFontSize = 9;
     const tableHeaderFontSize = 9;
     const tableCellFontSize = 8;
 
-    // 텍스트 추가 및 페이지 관리 헬퍼 함수
     function addText(text, x, y, size, style = 'normal', options = {}) {
-        // pdf.setFont()는 이미 위에서 NanumSquareACR로 설정됨
-        // 스타일 변경이 필요하면 pdf.setFont(undefined, style) 또는 pdf.setFont('NanumSquareACR', style) 호출
         pdf.setFontSize(size);
-        // pdf.setFont('NanumSquareACR', style); // 매번 호출할 수도 있음
         pdf.text(text, x, y, options);
     }
     
@@ -438,84 +498,79 @@ async function handlePdfDownload() {
         if (currentY + heightNeeded > pageHeight - bottomMargin) {
             pdf.addPage();
             currentY = topMargin;
-            // 새 페이지에도 폰트가 적용되도록 (보통은 세션 전반에 걸쳐 유지됨)
-            pdf.setFont('NanumSquareACR', 'normal'); // 필요시 재설정
+            pdf.setFont('NanumSquareACR', 'normal');
             return true; 
         }
         return false; 
     }
 
     // --- PDF 내용 생성 ---
-    const studentNameForPdf = studentNameInput.value.trim() || "미입력";
+    const studentNameForPdf = domElements.studentNameInput.value.trim() || "미입력";
 
-    // 1. 문서 제목
-    checkNewPage(titleFontSize / 2.5 + defaultLineHeight); // 폰트 크기에 따른 높이 근사치
+    checkNewPage(titleFontSize / 2.5 + defaultLineHeight);
     addText("수강신청 내역서", pageWidth / 2, currentY, titleFontSize, 'normal', { align: 'center' });
     currentY += titleFontSize / 2.5 + defaultLineHeight;
 
-    // 2. 학생 이름
     checkNewPage(normalFontSize / 2.5 + defaultLineHeight);
     addText(`학생 이름: ${studentNameForPdf}`, leftMargin, currentY, normalFontSize);
     currentY += defaultLineHeight * 1.5;
 
     let overallTotalHoursForPdf = 0;
-
-    // 테이블 컬럼 위치 및 너비
     const courseNameColX = leftMargin;
     const hoursColX = pageWidth - rightMargin; 
-    const tableTextYOffset = defaultLineHeight * 0.6; // 선과 텍스트 간격 (폰트 크기에 맞게 조절)
+    const tableTextYOffset = defaultLineHeight * 0.6;
 
-    // 3. 학기별 과목 리스트
-    for (const semester of [1, 2]) {
-        const semesterCoursesSelected = coursesBySemester[semester]
-            .filter(course => selectedCourseIds.has(course.id))
-            .sort((a, b) => { 
-                const groupAData = groupedCoursesBySemester[semester][a.group];
-                const groupBData = groupedCoursesBySemester[semester][b.group];
-                if (groupAData && groupBData) {
-                    if (groupAData.isMandatory && !groupBData.isMandatory) return -1;
-                    if (!groupAData.isMandatory && groupBData.isMandatory) return 1;
-                }
-                if (a.group !== b.group) return a.group.localeCompare(b.group, undefined, { numeric: true, sensitivity: 'base' });
-                return a.name.localeCompare(b.name);
-            });
+    // 학년별, 학기별 과목 리스트
+    for (const year of [2, 3]) {
+        for (const semester of [1, 2]) {
+            const yearSemesterCoursesSelected = coursesByYearSemester[year]?.[semester]
+                ?.filter(course => selectedCourseIds.has(course.id))
+                .sort((a, b) => { 
+                    const groupAData = groupedCoursesByYearSemester[year]?.[semester]?.[a.group];
+                    const groupBData = groupedCoursesByYearSemester[year]?.[semester]?.[b.group];
+                    if (groupAData && groupBData) {
+                        if (groupAData.isMandatory && !groupBData.isMandatory) return -1;
+                        if (!groupAData.isMandatory && groupBData.isMandatory) return 1;
+                    }
+                    if (a.group !== b.group) return a.group.localeCompare(b.group, undefined, { numeric: true, sensitivity: 'base' });
+                    return a.name.localeCompare(b.name);
+                });
 
-        if (semesterCoursesSelected.length > 0) {
-            checkNewPage(headerFontSize / 2.5 + defaultLineHeight * 1.5); 
-            
-            addText(`${semester}학기 선택과목`, leftMargin, currentY, headerFontSize, 'normal'); // bold 스타일 사용 가능하면 'bold'
-            currentY += defaultLineHeight * 1.5;
-
-            checkNewPage(tableHeaderFontSize / 2.5 + defaultLineHeight);
-            pdf.setLineWidth(0.2);
-            pdf.line(leftMargin, currentY, pageWidth - rightMargin, currentY); 
-            currentY += tableTextYOffset;
-            addText("과목명", courseNameColX + 2, currentY, tableHeaderFontSize, 'normal'); // bold 스타일 사용 가능하면 'bold'
-            addText("학점", hoursColX - 2, currentY, tableHeaderFontSize, 'normal', { align: 'right' }); // bold 스타일 사용 가능하면 'bold'
-            currentY += defaultLineHeight - tableTextYOffset; 
-            pdf.line(leftMargin, currentY, pageWidth - rightMargin, currentY); 
-            currentY += 1; 
-
-            let semesterTotalHours = 0;
-            for (const course of semesterCoursesSelected) {
-                checkNewPage(tableCellFontSize / 2.5 + defaultLineHeight);
+            if (yearSemesterCoursesSelected && yearSemesterCoursesSelected.length > 0) {
+                checkNewPage(headerFontSize / 2.5 + defaultLineHeight * 1.5); 
                 
-                currentY += tableTextYOffset -1; 
-                addText(course.name, courseNameColX + 2, currentY, tableCellFontSize);
-                addText(course.hours.toString(), hoursColX - 2, currentY, tableCellFontSize, 'normal', { align: 'right' });
-                currentY += defaultLineHeight - (tableTextYOffset -1) ; 
+                addText(`${year}학년 ${semester}학기 선택과목`, leftMargin, currentY, headerFontSize, 'normal');
+                currentY += defaultLineHeight * 1.5;
+
+                checkNewPage(tableHeaderFontSize / 2.5 + defaultLineHeight);
+                pdf.setLineWidth(0.2);
+                pdf.line(leftMargin, currentY, pageWidth - rightMargin, currentY); 
+                currentY += tableTextYOffset;
+                addText("과목명", courseNameColX + 2, currentY, tableHeaderFontSize, 'normal');
+                addText("학점", hoursColX - 2, currentY, tableHeaderFontSize, 'normal', { align: 'right' });
+                currentY += defaultLineHeight - tableTextYOffset; 
                 pdf.line(leftMargin, currentY, pageWidth - rightMargin, currentY); 
                 currentY += 1; 
 
-                semesterTotalHours += course.hours;
-            }
-            overallTotalHoursForPdf += semesterTotalHours;
+                let yearSemesterTotalHours = 0;
+                for (const course of yearSemesterCoursesSelected) {
+                    checkNewPage(tableCellFontSize / 2.5 + defaultLineHeight);
+                    currentY += tableTextYOffset -1; 
+                    addText(course.name, courseNameColX + 2, currentY, tableCellFontSize);
+                    addText(course.hours.toString(), hoursColX - 2, currentY, tableCellFontSize, 'normal', { align: 'right' });
+                    currentY += defaultLineHeight - (tableTextYOffset -1) ; 
+                    pdf.line(leftMargin, currentY, pageWidth - rightMargin, currentY); 
+                    currentY += 1; 
+                    yearSemesterTotalHours += course.hours;
+                }
+                overallTotalHoursForPdf += yearSemesterTotalHours;
 
-            checkNewPage(normalFontSize / 2.5 + defaultLineHeight * 1.5); 
-            currentY += defaultLineHeight / 2;
-            addText(`${semester}학기 총 학점:`, hoursColX - 25, currentY, normalFontSize, 'normal', { align: 'right'}); // bold 스타일 사용 가능하면 'bold'
-            addText(semesterTotalHours.toString(), hoursColX - 2, currentY, normalFontSize, 'normal', { align: 'right'}); // bold 스타일 사용 가능하면 'bold'
-            currentY += defaultLineHeight * 1.5; 
+                checkNewPage(normalFontSize / 2.5 + defaultLineHeight * 1.5); 
+                currentY += defaultLineHeight / 2;
+                addText(`${year}학년 ${semester}학기 총 학점:`, hoursColX - 35, currentY, normalFontSize, 'normal', { align: 'right'});
+                addText(yearSemesterTotalHours.toString(), hoursColX - 2, currentY, normalFontSize, 'normal', { align: 'right'});
+                currentY += defaultLineHeight * 1.5; 
+            }
         }
     }
     
@@ -526,8 +581,8 @@ async function handlePdfDownload() {
         currentY += defaultLineHeight;
 
         checkNewPage(headerFontSize / 2.5 + defaultLineHeight);
-        addText("전체 총 선택 학점:", hoursColX - 35, currentY, headerFontSize, 'normal', {align: 'right'}); // bold 스타일 사용 가능하면 'bold'
-        addText(overallTotalHoursForPdf.toString(), hoursColX -2 , currentY, headerFontSize, 'normal', {align: 'right'}); // bold 스타일 사용 가능하면 'bold'
+        addText("전체 총 선택 학점:", hoursColX - 35, currentY, headerFontSize, 'normal', {align: 'right'});
+        addText(overallTotalHoursForPdf.toString(), hoursColX -2 , currentY, headerFontSize, 'normal', {align: 'right'});
         currentY += defaultLineHeight;
     } else {
          checkNewPage(normalFontSize / 2.5 + defaultLineHeight);
@@ -535,7 +590,7 @@ async function handlePdfDownload() {
          currentY += defaultLineHeight;
     }
 
-    // --- PDF 저장 ---
+    // --- PDF 저장 (기존과 동일) ---
     const filename = studentNameForPdf !== "미입력" ? `수강신청내역_${studentNameForPdf}.pdf` : '수강신청내역.pdf';
     try {
         pdf.save(filename);
@@ -545,10 +600,8 @@ async function handlePdfDownload() {
     }
 }
 
-/**
- * Saves the current state (selected courses, student name) to localStorage.
- */
 function saveStateToLocalStorage() {
+    // ... (기존과 동일)
     const state = {
         selectedCourseIds: Array.from(selectedCourseIds),
         studentName: studentName
@@ -556,10 +609,8 @@ function saveStateToLocalStorage() {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state));
 }
 
-/**
- * Loads state from localStorage and applies it.
- */
 function loadStateFromLocalStorage() {
+    // ... (기존과 동일)
     const savedState = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (savedState) {
         try {
@@ -568,7 +619,7 @@ function loadStateFromLocalStorage() {
             studentName = state.studentName || '';
         } catch (e) {
             console.error("Error parsing state from localStorage:", e);
-            selectedCourseIds = new Set(); // Reset to default if parsing fails
+            selectedCourseIds = new Set(); 
             studentName = '';
         }
     }
