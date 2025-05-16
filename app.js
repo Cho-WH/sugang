@@ -522,6 +522,11 @@ async function handlePdfDownload() {
 
     // 학년별, 학기별 과목 리스트
     for (const year of [2, 3]) {
+        if (year === 3) { // 현재 처리할 학년이 3학년이면
+            pdf.addPage();
+            currentY = topMargin; // Y 위치 초기화
+            pdf.setFont('NanumSquareACR', 'normal'); // 새 페이지에 폰트 재설정 (필요시)
+        }
         for (const semester of [1, 2]) {
             const yearSemesterCoursesSelected = coursesByYearSemester[year]?.[semester]
                 ?.filter(course => selectedCourseIds.has(course.id))
