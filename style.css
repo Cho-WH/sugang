@@ -1,0 +1,243 @@
+/* style.css */
+:root {
+    --primary-color: #007bff;
+    --secondary-color: #6c757d;
+    --light-gray: #f8f9fa;
+    --dark-gray: #343a40;
+    --success-color: #28a745;
+    --error-color: #dc3545;
+    --border-color: #dee2e6;
+    --text-color: #212529;
+    --max-width: 800px;
+    --font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; /* Common Korean font */
+}
+
+body {
+    font-family: var(--font-family);
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    background-color: var(--light-gray);
+    color: var(--text-color);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.container {
+    width: 100%;
+    max-width: var(--max-width);
+    margin: 0 auto;
+    padding: 20px;
+    flex-grow: 1;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+header h1 {
+    color: var(--primary-color);
+    margin-bottom: 10px;
+}
+
+.student-info {
+    margin-top: 15px;
+}
+
+.student-info label {
+    margin-right: 8px;
+    font-weight: bold;
+}
+
+.student-info input[type="text"] {
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    width: 200px;
+}
+
+main {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 30px;
+}
+
+@media (min-width: 768px) {
+    main {
+        grid-template-columns: 2fr 1fr; /* Course list takes more space on larger screens */
+    }
+}
+
+#course-selection-area h2,
+#summary-section h2 {
+    color: var(--dark-gray);
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 8px;
+    margin-bottom: 15px;
+}
+
+.course-group {
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 20px;
+    background-color: #fff;
+}
+
+.course-group legend {
+    font-weight: bold;
+    color: var(--primary-color);
+    padding: 0 10px;
+    font-size: 1.1em;
+}
+
+.course-item {
+    margin-bottom: 10px;
+}
+
+.course-item label {
+    display: flex; 
+    align-items: center; 
+    cursor: pointer;
+    font-size: 0.95em;
+}
+
+.course-item input[type="checkbox"] {
+    margin-right: 10px; 
+    transform: scale(1.1); 
+}
+
+.course-item input[type="checkbox"]:disabled + span {
+    color: var(--secondary-color); 
+}
+
+
+#summary-section {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 5px;
+    border: 1px solid var(--border-color);
+}
+
+.summary-item {
+    font-size: 1.1em;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+#total-hours-display {
+    color: var(--primary-color);
+}
+
+#validation-messages-container p {
+    padding: 8px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+.validation-error {
+    background-color: #f8d7da;
+    color: var(--error-color);
+    border: 1px solid #f5c6cb;
+}
+
+.validation-success {
+    background-color: #d4edda;
+    color: var(--success-color);
+    border: 1px solid #c3e6cb;
+}
+
+button#download-pdf-btn {
+    display: block;
+    width: 100%;
+    padding: 12px 15px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-top: 20px;
+}
+
+button#download-pdf-btn:hover:not(:disabled) {
+    background-color: #0056b3;
+}
+
+button#download-pdf-btn:disabled {
+    background-color: var(--secondary-color);
+    cursor: not-allowed;
+}
+
+footer {
+    text-align: center;
+    margin-top: 30px;
+    padding: 15px 0;
+    border-top: 1px solid var(--border-color);
+    font-size: 0.9em;
+    color: var(--secondary-color);
+}
+/* style.css에 추가할 수 있는 스타일 */
+.semester-block {
+    border: 1px solid #e0e0e0;
+    padding: 20px;
+    margin-bottom: 30px;
+    border-radius: 8px;
+    background-color: #fdfdfd;
+}
+
+.semester-title {
+    text-align: center;
+    color: var(--primary-color);
+    margin-top: 0;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+}
+
+.course-selection-area-per-semester h4,
+.summary-section-per-semester h4 {
+    color: var(--dark-gray);
+    margin-bottom: 15px;
+}
+
+/* main 그리드 레이아웃 조정 (선택 사항) */
+@media (min-width: 768px) {
+    main {
+        /* 기존 grid-template-columns: 2fr 1fr; 대신 학기별로 더 유연하게 배치하거나,
+           각 semester-block이 알아서 너비를 차지하도록 단일 컬럼 유지 */
+        grid-template-columns: 1fr; /* 각 학기 블록이 전체 너비를 사용하도록 */
+    }
+    /* 또는 각 학기 블록 내에서 다시 그리드를 사용할 수 있습니다.
+       예: .semester-block { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+       하지만 지금은 단순하게 유지합니다.
+    */
+}
+
+#overall-summary-section {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 5px;
+    border: 1px solid var(--border-color);
+    margin-top: 20px; /* Add some space above the overall summary */
+}
+
+#overall-summary-section h2 {
+    color: var(--dark-gray);
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 8px;
+    margin-bottom: 15px;
+}
+
+#overall-validation-messages-container p {
+    padding: 8px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+}

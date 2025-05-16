@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>수강신청 연습</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>수강신청 연습</h1>
+            <div class="student-info">
+                <label for="studentName">학생 이름:</label>
+                <input type="text" id="studentName" placeholder="이름 입력 (선택 사항)">
+            </div>
+        </header>
+
+        <main>
+            <!-- 1학기 수강신청 영역 -->
+            <section id="semester-1-container" class="semester-block">
+                <h3 class="semester-title">1학기 수강신청</h3>
+                <div id="course-selection-area-1" class="course-selection-area-per-semester">
+                    <h4>과목 선택</h4>
+                    <div id="course-list-container-1" class="course-list-container-per-semester">
+                        <p>1학기 과목 정보를 불러오는 중입니다...</p>
+                    </div>
+                </div>
+                <div id="summary-section-1" class="summary-section-per-semester">
+                    <h4>선택 현황 (1학기)</h4>
+                    <div class="summary-item">
+                        총 선택 학점: <span id="total-hours-display-1">0</span> / 29
+                    </div>
+                    <div id="validation-messages-container-1" class="validation-messages-container-per-semester">
+                        <!-- 1학기 유효성 검사 메시지 -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2학기 수강신청 영역 -->
+            <section id="semester-2-container" class="semester-block">
+                <h3 class="semester-title">2학기 수강신청</h3>
+                <div id="course-selection-area-2" class="course-selection-area-per-semester">
+                    <h4>과목 선택</h4>
+                    <div id="course-list-container-2" class="course-list-container-per-semester">
+                        <p>2학기 과목 정보를 불러오는 중입니다...</p>
+                    </div>
+                </div>
+                <div id="summary-section-2" class="summary-section-per-semester">
+                    <h4>선택 현황 (2학기)</h4>
+                    <div class="summary-item">
+                        총 선택 학점: <span id="total-hours-display-2">0</span> / 29
+                    </div>
+                    <div id="validation-messages-container-2" class="validation-messages-container-per-semester">
+                        <!-- 2학기 유효성 검사 메시지 -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- 전체 요약 및 PDF 다운로드 버튼 -->
+            <section id="overall-summary-section">
+                <h2>전체 진행 상황</h2>
+                 <div id="overall-validation-messages-container">
+                    <!-- 전체 유효성 메시지 (예: "모든 학기 선택 완료") -->
+                </div>
+                <button id="download-pdf-btn" disabled>PDF 다운로드</button>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 수강신청 연습 앱</p>
+        </footer>
+    </div>
+
+    <!-- PDF 생성을 위한 숨겨진 컨텐츠 영역 
+    <div id="pdf-content-template" style="display: none; padding: 20px; font-family: 'Malgun Gothic', sans-serif;">
+        <h1>수강신청 내역서</h1>
+        <p id="pdf-student-name"></p>
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr>
+                    <th style="border: 1px solid #ccc; padding: 8px; text-align: left; background-color: #f2f2f2;">과목명</th>
+                    <th style="border: 1px solid #ccc; padding: 8px; text-align: right; background-color: #f2f2f2; width: 20%;">학점</th>
+                </tr>
+            </thead>
+            <tbody id="pdf-course-list-body">
+                 
+            </tbody>
+        </table>
+        <p id="pdf-total-hours"></p>
+    </div>-->
+    
+    <!-- External libraries 
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"
+            integrity="sha256-6H5VB5QyLldKH9oMFUmjxw2uWpPZETQXpCkBaDjquMs=" 
+            crossorigin="anonymous"></script>
+            -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" 
+            integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" 
+            crossorigin="anonymous"></script>
+    
+    <!-- Application script -->
+    <script type="module" src="app.js"></script>
+</body>
+</html>

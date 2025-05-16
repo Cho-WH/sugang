@@ -1,0 +1,371 @@
+[
+  {
+    "id": "c1",
+    "semester": 1,
+    "group": "학교지정",
+    "groupQuota": null,
+    "name": "문학",
+    "hours": 4,
+    "mandatory": true
+  },
+  {
+    "id": "c2",
+    "semester": 1,
+    "group": "학교지정",
+    "groupQuota": null,
+    "name": "대수",
+    "hours": 4,
+    "mandatory": true
+  },
+  {
+    "id": "c3",
+    "semester": 1,
+    "group": "학교지정",
+    "groupQuota": null,
+    "name": "영어1",
+    "hours": 4,
+    "mandatory": true
+  },
+  {
+    "id": "c4",
+    "semester": 1,
+    "group": "학교지정",
+    "groupQuota": null,
+    "name": "스포츠생활1",
+    "hours": 2,
+    "mandatory": true
+  },
+  {
+    "id": "c5",
+    "semester": 1,
+    "group": "선택과목군1",
+    "groupQuota": 3,
+    "name": "세계시민과지리",
+    "hours": 3,
+    "mandatory": false
+  },
+  {
+    "id": "c6",
+    "semester": 1,
+    "group": "선택과목군1",
+    "groupQuota": 3,
+    "name": "정치",
+    "hours": 3,
+    "mandatory": false
+  },
+  {
+    "id": "c7",
+    "semester": 1,
+    "group": "선택과목군1",
+    "groupQuota": 3,
+    "name": "세계사",
+    "hours": 3,
+    "mandatory": false
+  },
+  {
+    "id": "c8",
+    "semester": 1,
+    "group": "선택과목군1",
+    "groupQuota": 3,
+    "name": "현대사회와윤리",
+    "hours": 3,
+    "mandatory": false
+  },
+  {
+    "id": "c9",
+    "semester": 1,
+    "group": "선택과목군1",
+    "groupQuota": 3,
+    "name": "사회와문화",
+    "hours": 3,
+    "mandatory": false
+  },
+  {
+    "id": "c10",
+    "semester": 1,
+    "group": "선택과목군1",
+    "groupQuota": 3,
+    "name": "물리학",
+    "hours": 3,
+    "mandatory": false
+  },
+  {
+    "id": "c11",
+    "semester": 1,
+    "group": "선택과목군1",
+    "groupQuota": 3,
+    "name": "화학",
+    "hours": 3,
+    "mandatory": false
+  },
+  {
+    "id": "c12",
+    "semester": 1,
+    "group": "선택과목군1",
+    "groupQuota": 3,
+    "name": "생명과학",
+    "hours": 3,
+    "mandatory": false
+  },
+  {
+    "id": "c13",
+    "semester": 1,
+    "group": "선택과목군1",
+    "groupQuota": 3,
+    "name": "지구과학",
+    "hours": 3,
+    "mandatory": false
+  },
+  {
+    "id": "c14",
+    "semester": 1,
+    "group": "선택과목군5",
+    "groupQuota": 2,
+    "name": "일본어",
+    "hours": 3,
+    "mandatory": false
+  },
+  {
+    "id": "c15",
+    "semester": 1,
+    "group": "선택과목군5",
+    "groupQuota": 2,
+    "name": "중국어",
+    "hours": 3,
+    "mandatory": false
+  },
+  {
+    "id": "c16",
+    "semester": 1,
+    "group": "선택과목군5",
+    "groupQuota": 2,
+    "name": "한문",
+    "hours": 3,
+    "mandatory": false
+  },
+  {
+    "id": "c17",
+    "semester": 1,
+    "group": "선택과목군5",
+    "groupQuota": 2,
+    "name": "기술가정",
+    "hours": 3,
+    "mandatory": false
+  },
+  {
+    "id": "c18",
+    "semester": 1,
+    "group": "선택과목군5",
+    "groupQuota": 2,
+    "name": "정보",
+    "hours": 3,
+    "mandatory": false
+  },
+  {
+    "id": "c19",
+    "semester": 1,
+    "group": "선택과목군5",
+    "groupQuota": 2,
+    "name": "미술창작",
+    "hours": 3,
+    "mandatory": false
+  },
+  {
+    "id": "c20",
+    "semester": 1,
+    "group": "선택과목군5",
+    "groupQuota": 2,
+    "name": "음악연주와창작",
+    "hours": 3,
+    "mandatory": false
+  },
+  {
+    "id": "c21",
+    "semester": 2,
+    "group": "학교지정",
+    "groupQuota": null,
+    "name": "독서와작문",
+    "hours": 4,
+    "mandatory": true
+  },
+  {
+    "id": "c22",
+    "semester": 2,
+    "group": "학교지정",
+    "groupQuota": null,
+    "name": "미적분1",
+    "hours": 4,
+    "mandatory": true
+  },
+  {
+    "id": "c23",
+    "semester": 2,
+    "group": "학교지정",
+    "groupQuota": null,
+    "name": "영어2",
+    "hours": 4,
+    "mandatory": true
+  },
+  {
+    "id": "c24",
+    "semester": 2,
+    "group": "학교지정",
+    "groupQuota": null,
+    "name": "스포츠생활2",
+    "hours": 2,
+    "mandatory": true
+  },
+  {
+    "id": "c25",
+    "semester": 2,
+    "group": "선택과목군2",
+    "groupQuota": 3,
+    "name": "한국지리탐구",
+    "hours": 3,
+    "mandatory": false
+  },
+  {
+    "id": "c26",
+    "semester": 2,
+    "group": "선택과목군2",
+    "groupQuota": 3,
+    "name": "법과사회",
+    "hours": 3,
+    "mandatory": false
+  },
+  {
+    "id": "c27",
+    "semester": 2,
+    "group": "선택과목군2",
+    "groupQuota": 3,
+    "name": "동아시아역사기행",
+    "hours": 3,
+    "mandatory": false
+  },
+  {
+    "id": "c28",
+    "semester": 2,
+    "group": "선택과목군2",
+    "groupQuota": 3,
+    "name": "윤리와사상",
+    "hours": 3,
+    "mandatory": false
+  },
+  {
+    "id": "c29",
+    "semester": 2,
+    "group": "선택과목군2",
+    "groupQuota": 3,
+    "name": "경제",
+    "hours": 3,
+    "mandatory": false
+  },
+  {
+    "id": "c30",
+    "semester": 2,
+    "group": "선택과목군2",
+    "groupQuota": 3,
+    "name": "역학과에너지",
+    "hours": 3,
+    "mandatory": false
+  },
+  {
+    "id": "c31",
+    "semester": 2,
+    "group": "선택과목군2",
+    "groupQuota": 3,
+    "name": "화학반응의세계",
+    "hours": 3,
+    "mandatory": false
+  },
+  {
+    "id": "c32",
+    "semester": 2,
+    "group": "선택과목군2",
+    "groupQuota": 3,
+    "name": "세포와물질대사",
+    "hours": 3,
+    "mandatory": false
+  },
+  {
+    "id": "c33",
+    "semester": 2,
+    "group": "선택과목군2",
+    "groupQuota": 3,
+    "name": "지구시스템과학",
+    "hours": 3,
+    "mandatory": false
+  },
+  {
+    "id": "c34",
+    "semester": 2,
+    "group": "선택과목군2",
+    "groupQuota": 3,
+    "name": "기하",
+    "hours": 3,
+    "mandatory": false
+  },
+  {
+    "id": "c35",
+    "semester": 2,
+    "group": "선택과목군6",
+    "groupQuota": 2,
+    "name": "일본어",
+    "hours": 3,
+    "mandatory": false
+  },
+  {
+    "id": "c36",
+    "semester": 2,
+    "group": "선택과목군6",
+    "groupQuota": 2,
+    "name": "중국어",
+    "hours": 3,
+    "mandatory": false
+  },
+  {
+    "id": "c37",
+    "semester": 2,
+    "group": "선택과목군6",
+    "groupQuota": 2,
+    "name": "한문",
+    "hours": 3,
+    "mandatory": false
+  },
+  {
+    "id": "c38",
+    "semester": 2,
+    "group": "선택과목군6",
+    "groupQuota": 2,
+    "name": "기술가정",
+    "hours": 3,
+    "mandatory": false
+  },
+  {
+    "id": "c39",
+    "semester": 2,
+    "group": "선택과목군6",
+    "groupQuota": 2,
+    "name": "정보",
+    "hours": 3,
+    "mandatory": false
+  },
+  {
+    "id": "c40",
+    "semester": 2,
+    "group": "선택과목군6",
+    "groupQuota": 2,
+    "name": "미술창작",
+    "hours": 3,
+    "mandatory": false
+  },
+  {
+    "id": "c41",
+    "semester": 2,
+    "group": "선택과목군6",
+    "groupQuota": 2,
+    "name": "음악연주와창작",
+    "hours": 3,
+    "mandatory": false
+  }
+]
