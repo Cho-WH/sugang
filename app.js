@@ -25,6 +25,7 @@ let coursesByYearSemester = { 2: { 1: [], 2: [] }, 3: { 1: [], 2: [] } };
 let groupedCoursesByYearSemester = { 2: { 1: {}, 2: {} }, 3: { 1: {}, 2: {} } };
 let selectedCourseIds = new Set();
 let studentName = '';
+let studentIdNumber = '';
 
 /**
  * Initializes the application.
@@ -33,6 +34,7 @@ async function init() {
     cacheDomElements(); // DOM 요소 캐싱 함수 호출
     loadStateFromLocalStorage();
     domElements.studentNameInput.value = studentName;
+    if (domElements.studentIdInput) domElements.studentIdInput.value = studentIdNumber;
 
     try {
         allCourses = await fetchCourses();
@@ -85,6 +87,7 @@ async function init() {
  */
 function cacheDomElements() {
     domElements.studentNameInput = document.getElementById('studentName');
+    domElements.studentIdInput = document.getElementById('studentId');
     domElements.downloadPdfBtn = document.getElementById('download-pdf-btn');
     domElements.overallValidationMessagesContainer = document.getElementById('overall-validation-messages-container');
 
@@ -226,6 +229,7 @@ function createCourseItemElement(course, groupName, year, semester) { // year, s
 function setupEventListeners() {
     domElements.downloadPdfBtn.addEventListener('click', handlePdfDownload);
     domElements.studentNameInput.addEventListener('input', handleStudentNameChange);
+    if (domElements.studentIdInput) domElements.studentIdInput.addEventListener('input', handleStudentIdChange);
 }
 
 function handleCourseSelectionChange(event) {
@@ -247,6 +251,12 @@ function handleStudentNameChange(event) {
     studentName = event.target.value.trim();
     saveStateToLocalStorage();
     updateValidationAndUI(); 
+}
+
+function handleStudentIdChange(event) { // 새 함수 추가
+    studentIdNumber = event.target.value.trim();
+    saveStateToLocalStorage();
+    updateValidationAndUI();
 }
 
 /**
@@ -506,14 +516,19 @@ async function handlePdfDownload() {
 
     // --- PDF 내용 생성 ---
     const studentNameForPdf = domElements.studentNameInput.value.trim() || "미입력";
-
+    const studentIdForPdf = domElements.studentIdInput ? (domElements.studentIdInput.value.trim() || "미입력") : "미입력";
+    
     checkNewPage(titleFontSize / 2.5 + defaultLineHeight);
     addText("수강신청 내역서", pageWidth / 2, currentY, titleFontSize, 'normal', { align: 'center' });
     currentY += titleFontSize / 2.5 + defaultLineHeight;
 
     checkNewPage(normalFontSize / 2.5 + defaultLineHeight);
-    addText(`학생 이름: ${studentNameForPdf}`, leftMargin, currentY, normalFontSize);
-    currentY += defaultLineHeight * 1.5;
+    let studentInfoLine = `학생 이름: ${studentNameForPdf}`;
+    if (studentIdForPdf !== "미입력") {
+        studentInfoLine += `  (학번: ${studentIdForPdf})`;
+    }
+    addText(studentInfoLine, leftMargin, currentY, normalFontSize);
+    currentY += defaultLineHeight * 1.5;;
     
     checkNewPage(normalFontSize / 2.5 + defaultLineHeight * 3); 
     const teacherSignX = pageWidth - rightMargin; 
@@ -601,7 +616,12 @@ async function handlePdfDownload() {
     }
 
     // --- PDF 저장 (기존과 동일) ---
-    const filename = studentNameForPdf !== "미입력" ? `수강신청내역_${studentNameForPdf}.pdf` : '수강신청내역.pdf';
+    let filenamePrefix = studentNameForPdf !== "미입력" ? studentNameForPdf : "학생";
+    if (studentIdForPdf !== "미입력") {
+        filenamePrefix = `${studentIdForPdf}_${filenamePrefix}`;
+    }
+    const filename = `수강신청내역_${filenamePrefix}.pdf`;
+    
     try {
         pdf.save(filename);
     } catch (e) {
@@ -611,26 +631,27 @@ async function handlePdfDownload() {
 }
 
 function saveStateToLocalStorage() {
-    // ... (기존과 동일)
     const state = {
         selectedCourseIds: Array.from(selectedCourseIds),
-        studentName: studentName
+        studentName: studentName,
+        studentIdNumber: studentIdNumber // 학번 정보 저장
     };
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state));
 }
 
 function loadStateFromLocalStorage() {
-    // ... (기존과 동일)
     const savedState = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (savedState) {
         try {
             const state = JSON.parse(savedState);
             selectedCourseIds = new Set(state.selectedCourseIds || []);
             studentName = state.studentName || '';
+            studentIdNumber = state.studentIdNumber || ''; // 학번 정보 로드
         } catch (e) {
             console.error("Error parsing state from localStorage:", e);
             selectedCourseIds = new Set(); 
             studentName = '';
+            studentIdNumber = ''; // 초기화
         }
     }
 }
