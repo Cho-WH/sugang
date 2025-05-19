@@ -114,6 +114,16 @@ header h1 {
 
 .student-info {
     margin-top: 15px;
+    display: flex; /* 입력 항목들을 가로로 배치 */
+    justify-content: center; /* 가운데 정렬 (선택 사항) */
+    align-items: center; /* 세로 중앙 정렬 */
+    gap: 20px; /* 항목 간 간격 */
+    flex-wrap: wrap; /* 화면이 작을 경우 줄바꿈 허용 */
+}
+
+.student-info .info-item {
+    display: flex; /* 레이블과 입력 필드를 가로로 */
+    align-items: center; /* 세로 중앙 정렬 */
 }
 
 .student-info label {
@@ -125,9 +135,8 @@ header h1 {
     padding: 8px;
     border: 1px solid var(--border-color);
     border-radius: 4px;
-    width: 200px;
+    width: 180px; /* 너비 조정 (기존 200px에서 약간 줄임) */
 }
-
 main {
     display: grid;
     grid-template-columns: 1fr;
