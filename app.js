@@ -4,6 +4,8 @@ const COURSES_JSON_PATH = 'courses.json';
 const MANDATORY_GROUP_NAME = "학교지정";
 const LOCAL_STORAGE_KEY = 'courseSelectionsApp_Y2Y3'; // LocalStorage 키 변경
 
+const RESPONSE_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwQPOQ2BDjJSNb3zCmzTNBwWaiYBfyEcDAyAFgx_HHTdf9YtmwtQdvope3ImaVZ62qC/exec'; 
+
 const ART_MUSIC_COURSE_IDS = ["c19", "c20", "c40", "c41", "c55", "c56", "c82", "c83"];
 const KES_MAX_COURSE_IDS = ["c34", "c57", "c58", "c59", "c60", "c84", "c85"];
 const EXACT_ART_MUSIC_SELECTION = 2; 
@@ -227,10 +229,26 @@ function createCourseItemElement(course, groupName, year, semester) { // year, s
 }
 
 function setupEventListeners() {
-    domElements.downloadPdfBtn.addEventListener('click', handlePdfDownload);
+    domElements.downloadPdfBtn.addEventListener('click', async () => {
+        if (domElements.downloadPdfBtn.disabled) return; // 버튼 비활성화 시 동작 방지
+        // 1) PDF 다운로드
+        await handlePdfDownload();
+        // 2) 시트에 학생 응답 전송 (에러 발생해도 PDF 다운로드는 완료된 상태)
+        try {
+            await sendResponseToSheet();
+
+        } catch (error) {
+            console.error("Error during sendResponseToSheet after PDF download:", error);
+            alert("PDF는 다운로드되었으나, 응답 제출 중 오류가 발생했습니다. 관리자에게 문의하거나 다시 시도해주세요.");
+        }
+    });
     domElements.studentNameInput.addEventListener('input', handleStudentNameChange);
-    if (domElements.studentIdInput) domElements.studentIdInput.addEventListener('input', handleStudentIdChange);
+    if (domElements.studentIdInput) {
+        domElements.studentIdInput.addEventListener('input', handleStudentIdChange);
+    }
 }
+
+
 
 function handleCourseSelectionChange(event) {
     // ... (기존과 동일, selectedCourseIds 업데이트 후 updateValidationAndUI 호출)
@@ -654,6 +672,36 @@ function loadStateFromLocalStorage() {
             studentIdNumber = ''; // 초기화
         }
     }
+}
+
+// --- 응답 전송 함수 ---
+async function sendResponseToSheet() {
+  const payload = {
+    studentName,
+    studentId: studentIdNumber,
+    selectedCourseIds: Array.from(selectedCourseIds),
+  };
+
+  for (let attempt = 0; attempt < 5; attempt++) {
+    try {
+      const res = await fetch(RESPONSE_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error(res.statusText);
+      alert('응답이 정상적으로 제출되었습니다!');
+      return;
+    } catch (err) {
+      // 429 또는 네트워크 에러 시 지수 백오프 + 랜덤 지터
+      const backoff = (2 ** attempt) * 200 + Math.random() * 100;
+      await new Promise(r => setTimeout(r, backoff));
+      if (attempt === 4) {
+        alert('제출에 반복 실패했습니다. 잠시 후 다시 시도해 주세요.');
+        console.error('최종 오류:', err);
+      }
+    }
+  }
 }
 
 document.addEventListener('DOMContentLoaded', init);
