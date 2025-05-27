@@ -292,7 +292,7 @@ function updateValidationAndUI() {
                 allSemestersValid = false;
             }
 
-            // Update UI for Year/Semester
+            // Update UI for Year/Semester (기존과 동일)
             const keyPrefix = `y${year}s${semester}`;
             const totalHoursDisplay = domElements[`totalHoursDisplay_${keyPrefix}`];
             const validationMessagesContainer = domElements[`validationMessagesContainer_${keyPrefix}`];
@@ -309,63 +309,102 @@ function updateValidationAndUI() {
             }
         }
     }
-    
-    // --- 중복 과목 검사 로직 (기존 로직 유지 - 학년과 무관하게 동일 과목명이 다른 학기(1 vs 2)에 선택되면 중복) ---
+
+    // --- 중복 과목 검사 로직 (기존 로직 유지) ---
     let duplicateCourseError = null;
+    // ... (중복 과목 검사 로직은 변경 없음) ...
     const selectedCoursesDetails = Array.from(selectedCourseIds)
         .map(id => allCourses.find(course => course.id === id))
-        .filter(course => course); 
+        .filter(course => course);
 
     const courseNameSemesterMap = new Map();
     for (const course of selectedCoursesDetails) {
         if (!courseNameSemesterMap.has(course.name)) {
             courseNameSemesterMap.set(course.name, new Set());
         }
-        // course.semester 는 1 또는 2. 학년(year) 정보는 여기선 사용 안 함.
-        // 즉, '일본어 (2학년 1학기)'와 '일본어 (2학년 2학기)'는 중복.
-        // '일본어 (2학년 1학기)'와 '일본어 (3학년 1학기)'는 course.semester가 둘 다 1이므로 중복 아님.
-        // '일본어 (2학년 1학기)'와 '일본어 (3학년 2학기)'는 course.semester가 1과 2이므로 중복.
-        courseNameSemesterMap.get(course.name).add(course.semester); 
+        courseNameSemesterMap.get(course.name).add(course.semester);
     }
 
     for (const [courseName, semestersSet] of courseNameSemesterMap) {
-        if (semestersSet.size > 1) { 
+        if (semestersSet.size > 1) {
             const selectedOfferings = selectedCoursesDetails
                 .filter(c => c.name === courseName)
                 .map(c => `${c.year}학년 ${c.semester}학기`)
                 .join(', ');
             duplicateCourseError = `과목 "${courseName}"은(는) 여러 학기에 중복하여 선택할 수 없습니다. (선택된 시점: ${selectedOfferings})`;
-            break; 
+            break;
         }
     }
 
-    // --- 추가 전체 검증 조건 ---
+
+    // --- 추가 전체 검증 조건 (미술/음악, 국영수) ---
     let artMusicSelectionValid = true;
     let artMusicMessage = "";
-    const selectedArtMusicCoursesCount = Array.from(selectedCourseIds).filter(id => ART_MUSIC_COURSE_IDS.includes(id)).length; // 변수명 변경 (selectedArtMusicCourses -> selectedArtMusicCoursesCount)
-    
-    // 조건 변경: selectedArtMusicCoursesCount가 EXACT_ART_MUSIC_SELECTION과 다를 경우 오류
+    // ... (artMusicSelectionValid 로직은 변경 없음) ...
+    const selectedArtMusicCoursesCount = Array.from(selectedCourseIds).filter(id => ART_MUSIC_COURSE_IDS.includes(id)).length;
     if (selectedArtMusicCoursesCount !== EXACT_ART_MUSIC_SELECTION) {
         artMusicSelectionValid = false;
         artMusicMessage = `미술/음악 관련 과목(${ART_MUSIC_COURSE_IDS.map(id => allCourses.find(c=>c.id===id)?.name || id).join(', ')}) 중 정확히 ${EXACT_ART_MUSIC_SELECTION}개를 선택해야 합니다. (현재 ${selectedArtMusicCoursesCount}개 선택)`;
     }
 
+
     let kesSelectionValid = true;
-    // ... (kesSelectionValid 로직은 동일) ...
     let kesMessage = "";
+    // ... (kesSelectionValid 로직은 변경 없음) ...
     const selectedKESCourses = Array.from(selectedCourseIds).filter(id => KES_MAX_COURSE_IDS.includes(id)).length;
     if (selectedKESCourses > MAX_KES_SELECTION) {
         kesSelectionValid = false;
         kesMessage = `지정된 국영수 관련 과목(${KES_MAX_COURSE_IDS.map(id => allCourses.find(c=>c.id===id)?.name || id).join(', ')}) 중 ${MAX_KES_SELECTION}개 이하로 선택해야 합니다. (현재 ${selectedKESCourses}개 선택)`;
     }
 
-    // Overall validation and PDF button
-    const overallIsValid = allSemestersValid && !duplicateCourseError;
-    if (domElements.downloadPdfBtn) domElements.downloadPdfBtn.disabled = !overallIsValid;
-    
-    if (domElements.overallValidationMessagesContainer) {
-        domElements.overallValidationMessagesContainer.innerHTML = ''; 
 
+    // --- 학생 정보 입력 유효성 검사 ---
+    let studentInfoValid = true;
+    let studentInfoMessage = "";
+    if (!studentName.trim()) {
+        studentInfoValid = false;
+        studentInfoMessage = "학생 이름을 입력해주세요.";
+    } else if (domElements.studentIdInput && !studentIdNumber.trim()) { // 학번 입력 필드가 있다면 학번도 검사
+        studentInfoValid = false;
+        studentInfoMessage = "학번을 입력해주세요.";
+    }
+
+    // --- 선택된 과목 유무 검사 ---
+    let hasSelectedCourses = selectedCourseIds.size > 0;
+    let noSelectedCoursesMessage = "";
+    if (!hasSelectedCourses && studentInfoValid) { // 학생 정보는 입력했는데 과목 선택이 없다면 메시지 표시
+        noSelectedCoursesMessage = "선택된 과목이 없습니다. 과목을 선택해주세요.";
+    }
+
+
+    // Overall validation and PDF button
+    const allCourseConditionsMet = allSemestersValid && !duplicateCourseError && artMusicSelectionValid && kesSelectionValid;
+    const canSubmit = studentInfoValid && hasSelectedCourses && allCourseConditionsMet;
+
+    if (domElements.downloadPdfBtn) {
+        domElements.downloadPdfBtn.disabled = !canSubmit;
+    }
+
+    if (domElements.overallValidationMessagesContainer) {
+        domElements.overallValidationMessagesContainer.innerHTML = '';
+
+        // 학생 정보 유효성 메시지
+        if (!studentInfoValid && studentInfoMessage) {
+            const p = document.createElement('p');
+            p.textContent = studentInfoMessage;
+            p.classList.add('validation-error');
+            domElements.overallValidationMessagesContainer.appendChild(p);
+        }
+
+        // 선택된 과목 없음 메시지
+        if (studentInfoValid && !hasSelectedCourses && noSelectedCoursesMessage) {
+            const p = document.createElement('p');
+            p.textContent = noSelectedCoursesMessage;
+            p.classList.add('validation-error'); // 또는 'validation-warning' 등
+            domElements.overallValidationMessagesContainer.appendChild(p);
+        }
+
+        // 중복 과목 에러 메시지
         if (duplicateCourseError) {
             const p = document.createElement('p');
             p.textContent = duplicateCourseError;
@@ -373,48 +412,59 @@ function updateValidationAndUI() {
             domElements.overallValidationMessagesContainer.appendChild(p);
         }
 
+        // 미술/음악 선택 조건 메시지
         if (!artMusicSelectionValid) {
             const p = document.createElement('p');
             p.textContent = artMusicMessage;
             p.classList.add('validation-error');
             domElements.overallValidationMessagesContainer.appendChild(p);
-        } else if (artMusicMessage === "" && selectedArtMusicCoursesCount === EXACT_ART_MUSIC_SELECTION) { // 성공 조건 명확화
+        } else if (artMusicMessage === "" && selectedArtMusicCoursesCount === EXACT_ART_MUSIC_SELECTION && hasSelectedCourses) {
             const p = document.createElement('p');
             p.textContent = `미술/음악 관련 과목 선택 조건 충족! (정확히 ${EXACT_ART_MUSIC_SELECTION}개 선택됨)`;
             p.classList.add('validation-success');
             domElements.overallValidationMessagesContainer.appendChild(p);
         }
 
+        // 국영수 선택 조건 메시지
         if (!kesSelectionValid) {
-            // ... (KES 에러 메시지 표시는 동일) ...
             const p = document.createElement('p');
             p.textContent = kesMessage;
             p.classList.add('validation-error');
             domElements.overallValidationMessagesContainer.appendChild(p);
-        } else if (kesMessage === "" && selectedCourseIds.size > 0) { 
-            // ... (KES 성공 메시지 표시는 동일, selectedCourseIds.size > 0 조건은 선택사항으로 유지) ...
-             const p = document.createElement('p');
+        } else if (kesMessage === "" && hasSelectedCourses) {
+            const p = document.createElement('p');
             p.textContent = `지정 국영수 관련 과목 선택 조건 충족! (최대 ${MAX_KES_SELECTION}개, 현재 ${selectedKESCourses}개)`;
             p.classList.add('validation-success');
             domElements.overallValidationMessagesContainer.appendChild(p);
         }
 
-        if (overallIsValid) {
-            const p = document.createElement('p');
-            p.textContent = "모든 학년/학기의 수강신청 조건이 충족되었습니다. PDF 다운로드가 가능합니다.";
-            p.classList.add('validation-success');
-            domElements.overallValidationMessagesContainer.appendChild(p);
-        } else if (!duplicateCourseError) { 
+        // 학기별 조건 미충족 메시지 (개별 학기에서 이미 처리하지만, 요약으로도 표시 가능)
+        if (!allSemestersValid && !duplicateCourseError) { // 중복 오류가 아닐 때만 표시
             const p = document.createElement('p');
             let specificIssues = [];
             if (!validationResults.Y2S1.isValid) specificIssues.push("2학년 1학기");
             if (!validationResults.Y2S2.isValid) specificIssues.push("2학년 2학기");
             if (!validationResults.Y3S1.isValid) specificIssues.push("3학년 1학기");
             if (!validationResults.Y3S2.isValid) specificIssues.push("3학년 2학기");
-            
-            p.textContent = `${specificIssues.join(', ')} 수강신청 조건이 충족되지 않았습니다. 각 학년/학기별 선택 내용을 확인해주세요.`;
-            p.classList.add('validation-error');
+
+            if (specificIssues.length > 0) {
+                p.textContent = `${specificIssues.join(', ')} 수강신청 조건이 충족되지 않았습니다. 각 학년/학기별 선택 내용을 확인해주세요.`;
+                p.classList.add('validation-error');
+                domElements.overallValidationMessagesContainer.appendChild(p);
+            }
+        }
+
+        // 최종 제출 가능 여부 메시지
+        if (canSubmit) {
+            const p = document.createElement('p');
+            p.textContent = "모든 수강신청 조건이 충족되었습니다. PDF 다운로드 및 제출이 가능합니다.";
+            p.classList.add('validation-success');
             domElements.overallValidationMessagesContainer.appendChild(p);
+        } else if (studentInfoValid && hasSelectedCourses && !allCourseConditionsMet) { // 정보 입력, 과목 선택은 했으나 다른 조건 미충족
+             const p = document.createElement('p');
+             p.textContent = "일부 수강신청 조건이 충족되지 않았습니다. 위의 메시지를 확인해주세요.";
+             p.classList.add('validation-error');
+             domElements.overallValidationMessagesContainer.appendChild(p);
         }
     }
 }
