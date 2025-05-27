@@ -4,7 +4,9 @@ const COURSES_JSON_PATH = 'courses.json';
 const MANDATORY_GROUP_NAME = "학교지정";
 const LOCAL_STORAGE_KEY = 'courseSelectionsApp_Y2Y3'; // LocalStorage 키 변경
 
-const RESPONSE_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwQPOQ2BDjJSNb3zCmzTNBwWaiYBfyEcDAyAFgx_HHTdf9YtmwtQdvope3ImaVZ62qC/exec'; 
+const RESPONSE_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzaU2nt4HzMcNIaSD24gVO6u5o5mRYon9KSN7Cy-V5nSJxWMNaAF75hqxDjBd7HPFn2/exec'; 
+// my                      https://script.google.com/macros/s/AKfycbwQPOQ2BDjJSNb3zCmzTNBwWaiYBfyEcDAyAFgx_HHTdf9YtmwtQdvope3ImaVZ62qC/exec
+// workspace               https://script.google.com/macros/s/AKfycbzaU2nt4HzMcNIaSD24gVO6u5o5mRYon9KSN7Cy-V5nSJxWMNaAF75hqxDjBd7HPFn2/exec
 
 const ART_MUSIC_COURSE_IDS = ["c19", "c20", "c40", "c41", "c55", "c56", "c82", "c83"];
 const KES_MAX_COURSE_IDS = ["c34", "c57", "c58", "c59", "c60", "c84", "c85"];
@@ -734,24 +736,22 @@ async function sendResponseToSheet() {
 
   for (let attempt = 0; attempt < 5; attempt++) {
     try {
-      const res = await fetch(RESPONSE_ENDPOINT, {
+      await fetch(RESPONSE_ENDPOINT, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        mode: 'no-cors',
+        redirect: 'follow',
         body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error(res.statusText);
+
       alert('응답이 정상적으로 제출되었습니다!');
       return;
     } catch (err) {
-      // 429 또는 네트워크 에러 시 지수 백오프 + 랜덤 지터
-      const backoff = (2 ** attempt) * 200 + Math.random() * 100;
-      await new Promise(r => setTimeout(r, backoff));
-      if (attempt === 4) {
-        alert('제출에 반복 실패했습니다. 잠시 후 다시 시도해 주세요.');
-        console.error('최종 오류:', err);
-      }
+      await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
     }
   }
+
+  alert('응답 제출에 실패했습니다. 잠시 후 다시 시도해주세요.');
 }
+
 
 document.addEventListener('DOMContentLoaded', init);
