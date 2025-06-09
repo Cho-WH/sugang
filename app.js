@@ -602,7 +602,7 @@ async function handlePdfDownload() {
     
     checkNewPage(normalFontSize / 2.5 + defaultLineHeight * 3); 
     const teacherSignX = pageWidth - rightMargin; 
-    addText("담임교사 확인: _______________", teacherSignX, currentY, normalFontSize, 'normal', { align: 'right' });
+    addText("담임교사 확인: _______________   학부모 확인: _______________", teacherSignX, currentY, normalFontSize, 'normal', { align: 'right' });
     currentY += defaultLineHeight * 2; 
     
     let overallTotalHoursForPdf = 0;
